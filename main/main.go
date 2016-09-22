@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/dlutxx/dos"
+	"github.com/dlutxx/storm"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	url               = flag.String("url", "http://localhost/msg.json", "url to dos")
+	url               = flag.String("url", "http://localhost/msg.json", "url to storm")
 	method            = flag.String("method", "GET", "http verb")
 	concurrency       = flag.Int("concurrency", 64, "how many concurrent connections")
 	requestsPerThread = 0 // flag.Int("requestsPerThread", 0, "how many requests each thread send")
@@ -29,13 +29,13 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	cfg, _ := dos.NewSimpleConfig(*method, *url, *concurrency, requestsPerThread, data)
+	cfg, _ := storm.NewSimpleConfig(*method, *url, *concurrency, requestsPerThread, data)
 	if *test {
 		cfg.Show()
 		return
 	}
 
-	stormer := dos.NewStormer(*cfg)
+	stormer := storm.NewStormer(*cfg)
 
 	if *timeToRun > 0 {
 		go func() {

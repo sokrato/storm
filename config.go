@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 var (
@@ -15,6 +17,7 @@ var (
 type Config interface {
 	Concurrency() int
 	RequestsPerThread() int
+	ReadTimeout() time.Duration
 	Data() []byte
 	Show()
 	Dialer
@@ -24,6 +27,7 @@ type SimpleConfig struct {
 	address           string
 	concurrency       int
 	requestsPerThread int
+	readTimeout       time.Duration
 	data              []byte
 	dialer            Dialer
 	// secure           bool
@@ -36,6 +40,9 @@ func (c SimpleConfig) Concurrency() int {
 func (c SimpleConfig) RequestsPerThread() int {
 	return c.requestsPerThread
 }
+func (c SimpleConfig) ReadTimeout() time.Duration {
+	return c.readTimeout
+}
 func (c SimpleConfig) Data() []byte {
 	return c.data
 }
@@ -43,7 +50,7 @@ func (c SimpleConfig) Show() {
 	fmt.Printf("Address: %v\n", c.address)
 	fmt.Printf("Concurrency: %v\n", c.concurrency)
 	fmt.Printf("RequestsPerThread: %v\n", c.requestsPerThread)
-	fmt.Printf("data: \n-----\n%v\n", string(c.data))
+	fmt.Printf("data: \n---------\n%v\n", string(c.data))
 }
 func (c SimpleConfig) Dial() (Conn, error) {
 	return c.dialer.Dial()
@@ -74,7 +81,7 @@ func parseUrl(rawurl string) (addr, path string, secure bool, err error) {
 	return
 }
 
-func NewSimpleConfig(method, rawurl string, concurrency, requestsPerThread int, data []byte) (*SimpleConfig, error) {
+func NewSimpleConfig(method, rawurl string, concurrency, readTimeout int, header http.Header, entity []byte) (*SimpleConfig, error) {
 	addr, path, secure, err := parseUrl(rawurl)
 	if err != nil {
 		return nil, err
@@ -87,18 +94,28 @@ func NewSimpleConfig(method, rawurl string, concurrency, requestsPerThread int, 
 		dialer = CommonDialer{addr}
 	}
 
-	data = bytes.TrimSpace(data)
-	if bytes.Index(data, entitySep) < 0 {
-		data = append(data, entitySep...)
+	statusLine := []byte(method + " " + path + " HTTP/1.1" + LineSep)
+	buf := bytes.NewBuffer(statusLine)
+
+	header.Set("Connection", "keep-alive")
+	header.Del("Content-Length")
+	WriteHeader(buf, header)
+
+	buf.Write(LineSepBytes)
+	buf.Write(LineSepBytes)
+
+	entityLength := len(entity)
+	if entityLength > 0 {
+		header.Set("Content-Length", fmt.Sprintf("%v", entityLength))
+		buf.Write(entity)
 	}
-	statusLine := []byte(method + " " + path + " HTTP/1.1\n")
-	data = append(statusLine, data...)
 
 	return &SimpleConfig{
 		address:           addr,
 		concurrency:       concurrency,
-		requestsPerThread: requestsPerThread,
-		data:              data,
+		requestsPerThread: 0,
+		readTimeout:       time.Duration(readTimeout) * time.Millisecond,
+		data:              buf.Bytes(),
 		dialer:            dialer,
 	}, nil
 }

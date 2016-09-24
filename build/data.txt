@@ -1,5 +1,0 @@
-Host: localhost
-User-Agent: stormer/1.0
-Connection: keep-alive
-Accept: */*
-

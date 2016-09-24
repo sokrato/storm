@@ -31,23 +31,26 @@ func (d *Stormer) Stop() {
 	d.stop = true
 }
 
-func (d *Stormer) Start() {
-	fmt.Println("Storm the front!")
-
+func (d *Stormer) listenForInterrupts() {
 	// listen for INT to stop
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
 	go func() {
 		cnt := 0
-		for sig := range sigCh {
+		for range sigCh {
 			if cnt > 1 {
 				os.Exit(1)
 			}
 			cnt++
-			fmt.Printf("Stopping due to %v.... Press again to force quit.\n", sig)
 			d.Stop()
+			fmt.Printf("Press again to force quit.\n")
 		}
 	}()
+}
+
+func (d *Stormer) Start() {
+	fmt.Println("Storm the front!")
+	d.listenForInterrupts()
 
 	startAt := time.Now()
 	num := d.cfg.Concurrency()
@@ -108,11 +111,23 @@ func (d *Stormer) runOnce() (total, nfail uint, err error) {
 			i += nWrite
 		}
 
-		resp, er := http.ReadResponse(reader, nil)
+		var er error
+		var resp *http.Response
+		if TimedCall(func() {
+			resp, er = http.ReadResponse(reader, nil)
+		}, d.cfg.ReadTimeout()) {
+			er = ErrTimeout
+		}
+
 		if er != nil {
 			err = er
 			nfail++
 			return
+		}
+
+		keepAlive := resp.Header.Get("Connection")
+		if keepAlive != "keep-alive" {
+			break
 		}
 
 		for {

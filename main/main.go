@@ -3,20 +3,20 @@ package main
 import (
 	"flag"
 	"github.com/dlutxx/storm"
-	"io/ioutil"
 	"log"
 	"strings"
 	"time"
 )
 
 var (
-	url               = flag.String("url", "http://localhost/msg.json", "url to storm")
+	url               = flag.String("url", "http://localhost/", "url to storm")
 	method            = flag.String("method", "GET", "http verb")
 	concurrency       = flag.Int("concurrency", 64, "how many concurrent connections")
-	requestsPerThread = 0 // flag.Int("requestsPerThread", 0, "how many requests each thread send")
-	datafile          = flag.String("datafile", "data.txt", "which file to read")
+	requestsPerThread = 0 //flag.Int("requestsPerThread", 0, "how many requests each thread send") // not supported yet
+	readTimeout       = flag.Int("readTimeout", 200, "response read timeout in millisecond")
+	requestData       = flag.String("requestData", "request.txt", "which file to read")
 	timeToRun         = flag.Int("ttr", 0, "time to run, seconds")
-	test              = flag.Bool("test", false, "show config and exit")
+	show              = flag.Bool("show", false, "show config and exit")
 )
 
 func init() {
@@ -25,12 +25,14 @@ func init() {
 }
 
 func main() {
-	data, err := ioutil.ReadFile(*datafile)
+	header, entity, err := storm.ReadHeaderAndEntityFromFile(*requestData)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("Failed to read request data: " + err.Error())
 	}
-	cfg, _ := storm.NewSimpleConfig(*method, *url, *concurrency, requestsPerThread, data)
-	if *test {
+
+	*method = strings.ToUpper(*method)
+	cfg, _ := storm.NewSimpleConfig(*method, *url, *concurrency, *readTimeout, header, entity)
+	if *show {
 		cfg.Show()
 		return
 	}

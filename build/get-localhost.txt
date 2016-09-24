@@ -1,0 +1,8 @@
+# Top lines starting with # are comments.
+# The following headers are not necessary and will be ignored:
+#   Connection, Content-Length
+# Since storm will add them as needed.
+Host: localhost
+User-Agent: stormer/1.0
+X-Requested-With: XMLHttpRequest
+Accept: */*

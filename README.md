@@ -1,5 +1,3 @@
-## Welcome to the storm wiki!
-
 ### What is storm?
 `storm` is a simple command line http/https stress testing or benchmarking utility written in `Go`.
 
@@ -17,7 +15,7 @@ Just issue `./storm -h` and it will show all available options and give self-exp
 
 ### Example
 Show config and data:   
-`> ./storm -requestData post-localhost.txt -h`
+`> ./storm -requestData post-localhost.txt -method POST -h`
 ```
 Address: localhost:80
 Concurrency: 64

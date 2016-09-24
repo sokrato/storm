@@ -3,7 +3,7 @@
 
 
 ### How to install storm?
-You may either download the binary from [here](https://github.com/dlutxx/storm/tree/master/build) (Currently Linux version only) 
+You may either download the binary from [here](https://github.com/dlutxx/storm/releases).   
 Or compile from source:
 ```
 cd storm/ && go build -o storm main/main.go

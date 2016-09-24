@@ -6,6 +6,7 @@
 You may either download the binary from [here](https://github.com/dlutxx/storm/releases).   
 Or compile from source:
 ```
+git clone https://github.com/dlutxx/storm.git
 cd storm/ && go build -o storm main/main.go
 ```
 
